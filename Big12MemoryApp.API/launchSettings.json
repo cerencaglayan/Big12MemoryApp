@@ -1,0 +1,11 @@
+﻿{
+  "profiles": {
+    "Big12MemoryApp.API": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
