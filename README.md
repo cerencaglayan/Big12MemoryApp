@@ -1,8 +1,8 @@
-# Big12 Memory App 🎯
+# Big12 Memory App 
 
 A memory-keeping application built with clean architecture principles. Store your precious moments with photos and videos in a secure, well-structured way.
 
-## 🏗️ Architecture
+##  Architecture
 
 This project follows **Clean Architecture** principles with a layered approach:
 
@@ -39,7 +39,7 @@ Big12MemoryApp/
 - **Swagger/OpenAPI** - API documentation
 - **SMTP (Gmail)** - Email notifications
 
-## ✨ Features
+##  Features
 
 - JWT-based authentication with refresh tokens
 - Create and manage memories with descriptions and dates
@@ -164,7 +164,7 @@ DELETE /api/memories/{id}/attachments/{id}    # Remove file from memory
 **RefreshTokens**
 - JWT refresh token management
 
-## 🔐 Security
+##  Security
 
 - JWT Bearer Authentication
 - BCrypt password hashing
@@ -172,7 +172,7 @@ DELETE /api/memories/{id}/attachments/{id}    # Remove file from memory
 - Authorization-ready architecture
 - HTTPS enforcement (production)
 
-## 📦 Dependencies
+##  Dependencies
 
 Key NuGet packages used:
 
@@ -191,7 +191,7 @@ BCrypt.Net-Next (4.0.3)
 Npgsql.EntityFrameworkCore.PostgreSQL (9.0.1)
 ```
 
-## 🔄 Background Jobs
+## Background Jobs
 
 The application uses `TimerService` for scheduled tasks:
 
@@ -199,7 +199,7 @@ The application uses `TimerService` for scheduled tasks:
 - Checks for users with birthdays
 - Sends email notifications to other users
 
-## 🌐 Cloud Storage Setup (Backblaze B2)
+## Cloud Storage Setup (Backblaze B2)
 
 Backblaze B2 is an S3-compatible object storage service:
 
@@ -216,7 +216,7 @@ Using Gmail SMTP. To set up:
 2. Generate an [App Password](https://myaccount.google.com/apppasswords)
 3. Add the generated password to `appsettings.json`
 
-## 🐳 Docker (Optional)
+## Docker (Optional)
 
 ```bash
 # Build Docker image
@@ -226,7 +226,7 @@ docker build -t big12memoryapp .
 docker run -p 8080:8080 big12memoryapp
 ```
 
-## 📝 Development
+## Development
 
 ### Adding New Migrations
 
@@ -244,7 +244,7 @@ INSERT INTO "Users" ("Name", "Surname", "Email", "Password", "Birthday", "IsDele
 VALUES ('Test', 'User', 'test@example.com', '$2a$11$hashed_password', '1990-01-01', false, NOW(), NOW());
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
