@@ -13,13 +13,17 @@ using Microsoft.AspNetCore.Http;
 
 namespace Big12MemoryApp.Application.Services;
 
-public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository _attachmentRepo, IMemoryAttachmentRepository _memoryAttachmentRepo, IFileStorageService _storageService)
+public class MemoryService(
+    IMemoryRepository _memoryRepo,
+    IAttachmentRepository _attachmentRepo,
+    IMemoryAttachmentRepository _memoryAttachmentRepo,
+    IFileStorageService _storageService)
 {
-
     /// <summary>
     /// Yeni memory oluşturur ve dosyaları yükler
     /// </summary>
-    public async Task<Result<MemoryResponse>> CreateMemoryWithAttachmentsAsync(CreateMemoryRequest request, int userId, CancellationToken ct = default)
+    public async Task<Result<MemoryResponse>> CreateMemoryWithAttachmentsAsync(CreateMemoryRequest request, int userId,
+        CancellationToken ct = default)
     {
         var memory = new Memory
         {
@@ -68,7 +72,7 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
     public async Task<Result<MemoryResponse>> GetMemoryByIdAsync(int memoryId, CancellationToken ct = default)
     {
         var memory = await _memoryRepo.GetByIdWithAttachmentsAsync(memoryId, ct);
-        
+
         if (memory == null)
             return Result<MemoryResponse>.Failure(MemoryErrors.MemoryNotfound(memoryId));
 
@@ -87,7 +91,8 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
     /// <summary>
     /// Memory'ye yeni dosyalar ekler
     /// </summary>
-    public async Task<Result<MemoryResponse>> AddAttachmentsToMemoryAsync(int memoryId, List<IFormFile> files, int userId, List<string?>? captions = null, CancellationToken ct = default)
+    public async Task<Result<MemoryResponse>> AddAttachmentsToMemoryAsync(int memoryId, List<IFormFile> files,
+        int userId, List<string?>? captions = null, CancellationToken ct = default)
     {
         var memory = await _memoryRepo.GetByIdAsync(memoryId, ct);
         if (memory == null)
@@ -102,7 +107,7 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
         for (int i = 0; i < files.Count; i++)
         {
             var file = files[i];
-            
+
             // B2'ye yükle
             var filePath = await _storageService.UploadFileAsync(file, userId, ct);
 
@@ -133,7 +138,8 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
     /// <summary>
     /// Memory'den attachment'ı kaldırır ve B2'den siler
     /// </summary>
-    public async Task<bool> RemoveAttachmentFromMemoryAsync(int memoryId, int attachmentId, int userId, CancellationToken ct = default)
+    public async Task<bool> RemoveAttachmentFromMemoryAsync(int memoryId, int attachmentId, int userId,
+        CancellationToken ct = default)
     {
         var memory = await _memoryRepo.GetByIdAsync(memoryId, ct);
         if (memory == null || memory.UserId != userId)
@@ -148,16 +154,16 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
 
         // Eğer bu attachment başka hiçbir memory'de kullanılmıyorsa, B2'den de sil
         var otherUsages = await _memoryAttachmentRepo.GetAllAsync(ct);
-        var isUsedElsewhere = otherUsages.Any(ma => 
-            ma.AttachmentId == attachmentId && 
-            ma.MemoryId != memoryId && 
+        var isUsedElsewhere = otherUsages.Any(ma =>
+            ma.AttachmentId == attachmentId &&
+            ma.MemoryId != memoryId &&
             !ma.IsDeleted);
 
         if (!isUsedElsewhere)
         {
             // B2'den sil
             await _storageService.DeleteFileAsync(attachment.FilePath, ct);
-            
+
             // DB'den sil
             await _attachmentRepo.DeleteAttachmentAsync(attachmentId);
         }
@@ -171,8 +177,8 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
     public async Task<Result<bool>> DeleteMemoryAsync(int memoryId, int userId, CancellationToken ct = default)
     {
         var memory = await _memoryRepo.GetByIdAsync(memoryId, ct);
-        
-        if (memory == null )
+
+        if (memory == null)
             return Result<bool>.Failure(MemoryErrors.MemoryNotfound(memoryId));
 
         if (memory.UserId != userId)
@@ -187,11 +193,12 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
     /// <summary>
     /// Attachment caption'ını günceller
     /// </summary>
-    public async Task<Result<bool>> UpdateAttachmentCaptionAsync(int memoryId, int attachmentId, string caption, int userId, CancellationToken ct = default)
+    public async Task<Result<bool>> UpdateAttachmentCaptionAsync(int memoryId, int attachmentId, string caption,
+        int userId, CancellationToken ct = default)
     {
         var memory = await _memoryRepo.GetByIdAsync(memoryId, ct);
-        
-        if (memory == null )
+
+        if (memory == null)
             return Result<bool>.Failure(MemoryErrors.MemoryNotfound(memoryId));
 
         if (memory.UserId != userId)
@@ -210,12 +217,13 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
 
     /*
      *
-     * TODO: BU OLMALI MI ??? 
+     * TODO: BU OLMALI MI ???
      */
     /// <summary>
     /// Attachment sıralamasını günceller
     /// </summary>
-    public async Task ReorderAttachmentsAsync(int memoryId, Dictionary<int, int> attachmentOrders, int userId, CancellationToken ct = default)
+    public async Task ReorderAttachmentsAsync(int memoryId, Dictionary<int, int> attachmentOrders, int userId,
+        CancellationToken ct = default)
     {
         var memory = await _memoryRepo.GetByIdAsync(memoryId, ct);
         if (memory == null || memory.UserId != userId)
@@ -223,7 +231,8 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
 
         foreach (var (attachmentId, newOrder) in attachmentOrders)
         {
-            var memoryAttachment = await _memoryAttachmentRepo.GetByMemoryAndAttachmentIdAsync(memoryId, attachmentId, ct);
+            var memoryAttachment =
+                await _memoryAttachmentRepo.GetByMemoryAndAttachmentIdAsync(memoryId, attachmentId, ct);
             if (memoryAttachment != null)
             {
                 memoryAttachment.DisplayOrder = newOrder;
@@ -240,6 +249,7 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
             Description = memory.Description,
             Date = memory.Date,
             UserId = memory.UserId,
+            MemoryTypeId = memory.MemoryTypeId == null ? 0 : memory.MemoryTypeId,
             CreatedAt = memory.CreatedAt,
             Attachments = memory.MemoryAttachments
                 .Where(ma => !ma.IsDeleted && !ma.Attachment.IsDeleted)
@@ -257,5 +267,5 @@ public class MemoryService(IMemoryRepository _memoryRepo, IAttachmentRepository 
                 })
                 .ToList()
         };
-    }    
+    }
 }

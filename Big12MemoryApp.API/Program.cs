@@ -19,6 +19,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,7 +42,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header
-       // Description = "Enter 'Bearer {token}'"
+        // Description = "Enter 'Bearer {token}'"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -59,6 +61,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+
 builder.Services.Configure<GmailConfig>(
     builder.Configuration.GetSection(GmailConfig.GmailOptionKey));
 
@@ -75,6 +78,9 @@ builder.Services
     .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
     .Validate(o => o.Key.Length >= 32, "JWT Key must be at least 32 characters")
     .ValidateOnStart();
+
+Console.WriteLine($"ENV: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"JWT KEY: '{builder.Configuration["Jwt:Key"]}'");
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
@@ -129,21 +135,21 @@ builder.Services.AddSingleton<IAmazonS3>(sp =>
         ForcePathStyle = true
     };
 
-    var client =  new AmazonS3Client(
+    var client = new AmazonS3Client(
         options.AccessKey,
         options.SecretKey,
         config
     );
     PutObjectRequest request = new PutObjectRequest();
     var stream = new MemoryStream();
-    
+
     request.InputStream = stream;
-    request.BucketName = options.BucketName;      
-    request.Key = "data/";    
+    request.BucketName = options.BucketName;
+    request.Key = "data/";
     request.CannedACL = S3CannedACL.PublicRead;
 
-    client.PutObjectAsync(request);  
-    
+    client.PutObjectAsync(request);
+
     return client;
 });
 
@@ -159,7 +165,31 @@ builder.Services.Configure<FormOptions>(options =>
 });
 builder.Services.AddHostedService<TimerService>();
 builder.Services.AddScoped<MailJob>();
-
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource =>
+        resource.AddService(
+            serviceName: "Big12MemoryApp.API",
+            serviceVersion: "1.0.0"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddEntityFrameworkCoreInstrumentation(options =>
+            {
+                options.EnrichWithIDbCommand = (activity, command) =>
+                {
+                    var stateDisplayName = $"{command.CommandType} main";
+                    activity.DisplayName = stateDisplayName;
+                    activity.SetTag("db.name", stateDisplayName);
+                };
+            })
+            .AddHttpClientInstrumentation()
+            .AddOtlpExporter(otlp =>
+            {
+                // Aspire Dashboard OTLP gRPC
+                otlp.Endpoint = new Uri("http://localhost:18889");
+            });
+    });
 var app = builder.Build();
 
 app.UseSwagger();
